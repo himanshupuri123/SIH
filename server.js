@@ -4,39 +4,49 @@ const cors = require('cors');
 
 const app = express();
 
-// ===============================
-// Middleware
-// ===============================
+// =====================================================
+// MIDDLEWARE
+// =====================================================
+
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 
-// ===============================
-// MongoDB Connection
-// ===============================
+// =====================================================
+// MONGODB CONNECTION
+// =====================================================
+
 const MONGODB_URI =
-    'mongodb+srv://himanshupuri527_db_user:HvCVj8QQUDUth8MC@cluster0.nwoumh3.mongodb.net/sih2026DB?retryWrites=true&w=majority';
+    'mongodb+srv://himanshupuri_db_user:YOUR_PASSWORD@cluster0.nwoumh3.mongodb.net/sih2026DB?retryWrites=true&w=majority';
 
-let isMongoConnected = false;
+let mongoConnectionPromise = null;
 
 async function connectMongoDB() {
-    if (isMongoConnected && mongoose.connection.readyState === 1) {
+
+    if (mongoose.connection.readyState === 1) {
         return;
     }
 
-    try {
-        await mongoose.connect(MONGODB_URI, {
-            serverSelectionTimeoutMS: 5000
+    if (!mongoConnectionPromise) {
+
+        mongoConnectionPromise = mongoose.connect(MONGODB_URI, {
+            serverSelectionTimeoutMS: 10000
         });
 
-        isMongoConnected = true;
+    }
 
-        console.log('MongoDB Connected Successfully for SIH 2026!');
+    try {
+
+        await mongoConnectionPromise;
+
+        console.log('MongoDB Connected Successfully!');
+
     } catch (error) {
-        isMongoConnected = false;
+
+        mongoConnectionPromise = null;
 
         console.error(
-            'Database Connection Error:',
+            'MongoDB Connection Error:',
             error.message
         );
 
@@ -44,23 +54,27 @@ async function connectMongoDB() {
     }
 }
 
-// ===============================
-// Team Schema
-// ===============================
+// =====================================================
+// TEAM SCHEMA
+// =====================================================
+
 const teamSchema = new mongoose.Schema({
 
     // Team Leader
     leaderName: String,
     leaderBranch: String,
     leaderYear: String,
+
     leaderEmail: {
         type: String,
         unique: true
     },
+
     teamName: {
         type: String,
         unique: true
     },
+
     leaderContact: String,
     leaderGender: String,
 
@@ -109,16 +123,19 @@ const teamSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+
 });
 
-// ===============================
-// Team Model
-// ===============================
+// =====================================================
+// MODEL
+// =====================================================
+
 const Team = mongoose.model('Team', teamSchema);
 
-// ===============================
-// Test API
-// ===============================
+// =====================================================
+// TEST ROUTE
+// =====================================================
+
 app.get('/api/test', async (req, res) => {
 
     try {
@@ -132,22 +149,26 @@ app.get('/api/test', async (req, res) => {
 
     } catch (error) {
 
+        console.error('Test API Error:', error);
+
         res.status(500).json({
             success: false,
             message: 'MongoDB connection failed',
             error: error.message
         });
+
     }
+
 });
 
-// ===============================
-// Register Team API
-// ===============================
+// =====================================================
+// REGISTER TEAM API
+// =====================================================
+
 app.post('/api/register', async (req, res) => {
 
     try {
 
-        // Make sure MongoDB is connected
         await connectMongoDB();
 
         const formData = req.body;
@@ -173,9 +194,10 @@ app.post('/api/register', async (req, res) => {
                 message:
                     'Team Name or Leader Email already registered!'
             });
+
         }
 
-        // Create new team
+        // Create team
         const newTeam = new Team(formData);
 
         // Save team
@@ -201,12 +223,15 @@ app.post('/api/register', async (req, res) => {
             message: 'Server error',
             error: error.message
         });
+
     }
+
 });
 
-// ===============================
-// Local Development
-// ===============================
+// =====================================================
+// LOCAL DEVELOPMENT
+// =====================================================
+
 if (process.env.NODE_ENV !== 'production') {
 
     const PORT = process.env.PORT || 5000;
@@ -218,9 +243,11 @@ if (process.env.NODE_ENV !== 'production') {
         );
 
     });
+
 }
 
-// ===============================
-// Export App for Vercel
-// ===============================
+// =====================================================
+// EXPORT FOR VERCEL
+// =====================================================
+
 module.exports = app;

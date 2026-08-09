@@ -1,4 +1,8 @@
 {
+  "name": "icfai-sih",
+  "version": "1.0.0",
+  "description": "SIH 2026 Team Registration Application",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
