@@ -9,7 +9,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-mongoose.connect('mongodb+srv://himanshupuri527_db_user:HvCVj8QQUDUth8MC@cluster0.nwoumh3.mongodb.net/sih2026DB?retryWrites=true&w=majority')
+mongoose.connect('mongodb+srv://himanshupuri527_db_user:HvCVj8QQUDUth8MC@cluster0.nwoumh3.mongodb.net/sih2026DB?retryWrites=true&w=majority', {
+    serverSelectionTimeoutMS: 5000
+})
 .then(() => console.log('MongoDB Connected Successfully for SIH 2026!'))
 .catch((err) => console.log('Database Connection Error: ', err));
 
@@ -93,8 +95,6 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Start Server
-const PORT = 5000;
 // Start Server (Conditional for Local vs Vercel)
 if (process.env.NODE_ENV !== 'production') {
     const PORT = 5000;
@@ -105,9 +105,6 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Export app for Vercel Serverless Deployment
 module.exports = app;
-
-
-
 
 function handleFinalSubmit(e) {
     e.preventDefault();
@@ -132,8 +129,8 @@ function handleFinalSubmit(e) {
     const formData = new FormData(formElement);
     const dataObject = Object.fromEntries(formData.entries());
 
-    // Send data to Backend Server (Relative URL use kiya hai taaki Vercel par chal sake)
-    fetch('/api/register', {
+    // Send data to Backend Server using absolute Vercel live URL
+    fetch('https://icfai-sih.vercel.app/api/register', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
