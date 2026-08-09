@@ -95,9 +95,16 @@ app.post('/api/register', async (req, res) => {
 
 // Start Server
 const PORT = 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Start Server (Conditional for Local vs Vercel)
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = 5000;
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    });
+}
+
+// Export app for Vercel Serverless Deployment
+module.exports = app;
 
 
 
