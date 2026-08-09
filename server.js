@@ -130,7 +130,8 @@ function handleFinalSubmit(e) {
     const dataObject = Object.fromEntries(formData.entries());
 
     // Send data to Backend Server using absolute Vercel live URL
-    fetch('https://icfai-sih.vercel.app/api/register', {
+  // script.js ke andar fetch request ko yeh karein:
+    fetch('/api/register', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
