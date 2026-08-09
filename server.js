@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-mongoose.connect('mongodb://127.0.0.1:27017/sih2026DB')
+mongoose.connect('mongodb+srv://himanshupuri527_db_user:HvCVj8QQUDUth8MC@cluster0.nwoumh3.mongodb.net/sih2026DB?retryWrites=true&w=majority')
 .then(() => console.log('MongoDB Connected Successfully for SIH 2026!'))
 .catch((err) => console.log('Database Connection Error: ', err));
 
