@@ -112,18 +112,92 @@ function changeStep(direction) {
     document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
 }
 
+// function handleFinalSubmit(e) {
+//     e.preventDefault();
+//     const submitBtn = document.getElementById('submitBtn');
+//     const feedback = document.getElementById('formFeedback');
+//     submitBtn.innerText = 'Submitting...';
+//     submitBtn.disabled = true;
+
+//     setTimeout(() => {
+//         submitBtn.classList.add('hidden');
+//         document.getElementById('prevBtn').classList.add('hidden');
+//         feedback.classList.remove('hidden');
+//     }, 800);
+// }
+
+
 function handleFinalSubmit(e) {
     e.preventDefault();
+    
+    // Validate last step (Step 6) inputs before submission
+    const currentStepEl = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+    const inputs = currentStepEl.querySelectorAll('input, select');
+    for (let input of inputs) {
+        if (input.hasAttribute('required') && !input.value) {
+            input.reportValidity();
+            return;
+        }
+    }
+
     const submitBtn = document.getElementById('submitBtn');
     const feedback = document.getElementById('formFeedback');
     submitBtn.innerText = 'Submitting...';
     submitBtn.disabled = true;
 
-    setTimeout(() => {
-        submitBtn.classList.add('hidden');
-        document.getElementById('prevBtn').classList.add('hidden');
-        feedback.classList.remove('hidden');
-    }, 800);
+    // Collect all form data using FormData API
+    const formElement = document.getElementById('multiStepForm');
+    const formData = new FormData(formElement);
+    const dataObject = Object.fromEntries(formData.entries());
+
+    // Send data to Node.js Backend Server
+    fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataObject)
+    })
+    .then(response => response.json())
+    .then(data => {
+        setTimeout(() => {
+            submitBtn.classList.add('hidden');
+            document.getElementById('prevBtn').classList.add('hidden');
+            
+            if (data.success) {
+                // Custom Success Message requested by you
+                feedback.innerHTML = '🎉 **Congratulations! Team registered successfully!**';
+                feedback.classList.remove('hidden');
+                
+                // Form ko 3 seconds baad automatically close (hide) karne ke liye
+                setTimeout(() => {
+                    // Agar aapke form ka koi modal wrapper hai toh uski ID yahan likhein, 
+                    // filhal poore form container ko hide karne ke liye yeh use karein:
+                    const formContainer = document.querySelector('.form-step').closest('form') || document.getElementById('multiStepForm');
+                    if (formContainer) {
+                        formContainer.style.display = 'none';
+                    }
+                    // Success feedback ko bhi hide karna chahein toh:
+                    // feedback.style.display = 'none';
+                }, 3000); // 3 seconds delay taaki user message padh sake
+
+            } else {
+                feedback.innerText = '❌ ' + data.message;
+                feedback.classList.remove('hidden', 'bg-green-500/20', 'border-green-500/40', 'text-green-300');
+                feedback.classList.add('bg-red-500/20', 'border-red-500/40', 'text-red-300');
+                submitBtn.innerText = 'Submit Form ✓';
+                submitBtn.disabled = false;
+            }
+        }, 800);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        setTimeout(() => {
+            submitBtn.innerText = 'Submit Form ✓';
+            submitBtn.disabled = false;
+            alert('Server connection failed! Make sure your Node.js server is running.');
+        }, 800);
+    });
 }
 
 
