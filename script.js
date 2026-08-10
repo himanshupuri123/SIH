@@ -1,242 +1,132 @@
-function handleFinalSubmit(e) {
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    menu.classList.toggle('hidden');
+}
 
-    e.preventDefault();
+function updateCountdown() {
+    const targetDate = new Date("September 15, 2026 23:59:59").getTime();
+    const now = new Date().getTime();
+    const difference = targetDate - now;
 
-    // ==========================================
-    // Validate current step
-    // ==========================================
+    if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-    const currentStepEl =
-        document.querySelector(
-            `.form-step[data-step="${currentStep}"]`
-        );
-
-    if (!currentStepEl) {
-        console.error('Current form step not found.');
-        return;
+        document.getElementById("days").innerText = days < 10 ? '0' + days : days;
+        document.getElementById("hours").innerText = hours < 10 ? '0' + hours : hours;
+        document.getElementById("minutes").innerText = minutes < 10 ? '0' + minutes : minutes;
+        document.getElementById("seconds").innerText = seconds < 10 ? '0' + seconds : seconds;
     }
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
 
-    const inputs =
-        currentStepEl.querySelectorAll(
-            'input, select'
-        );
+function revealOnScroll() {
+    const reveals = document.querySelectorAll('.reveal');
+    for (let i = 0; i < reveals.length; i++) {
+        const windowHeight = window.innerHeight;
+        const elementTop = reveals[i].getBoundingClientRect().top;
+        const elementVisible = 100;
 
-    for (let input of inputs) {
+        if (elementTop < windowHeight - elementVisible) {
+            reveals[i].classList.add('active');
+        }
+    }
+}
+window.addEventListener('scroll', revealOnScroll);
+revealOnScroll();
 
-        if (
-            input.hasAttribute('required') &&
-            !input.value.trim()
-        ) {
+function openModal() {
+    document.getElementById('posterModal').classList.remove('hidden');
+}
 
-            input.reportValidity();
+function closeModal() {
+    document.getElementById('posterModal').classList.add('hidden');
+}
 
-            return;
+// Multi-Step Form Logic
+let currentStep = 1;
+const totalSteps = 6;
+
+const stepTitles = {
+    1: { title: "Step 1: Team Leader Details", subtitle: "Provide team leader and team name details." },
+    2: { title: "Step 2: First Team Member Registration", subtitle: "Provide details for the first team member." },
+    3: { title: "Step 3: Second Team Member Registration", subtitle: "Provide details for the second team member." },
+    4: { title: "Step 4: Third Team Member Registration", subtitle: "Provide details for the third team member." },
+    5: { title: "Step 5: Fourth Team Member Registration", subtitle: "Provide details for the fourth team member." },
+    6: { title: "Step 6: Fifth Team Member Registration", subtitle: "Provide details for the fifth team member." }
+};
+
+function changeStep(direction) {
+    const currentStepEl = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+    
+    // Simple validation check before going forward
+    if (direction === 1) {
+        const inputs = currentStepEl.querySelectorAll('input, select');
+        for (let input of inputs) {
+            if (input.hasAttribute('required') && !input.value) {
+                input.reportValidity();
+                return;
+            }
         }
     }
 
-    // ==========================================
-    // Get buttons and feedback elements
-    // ==========================================
+    currentStep += direction;
 
-    const submitBtn =
-        document.getElementById('submitBtn');
+    if (currentStep < 1) currentStep = 1;
+    if (currentStep > totalSteps) currentStep = totalSteps;
 
-    const feedback =
-        document.getElementById('formFeedback');
+    // Hide all steps
+    document.querySelectorAll('.form-step').forEach(step => step.classList.add('hidden'));
+    
+    // Show target step
+    document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.remove('hidden');
 
-    if (!submitBtn) {
-        console.error('Submit button not found.');
-        return;
+    // Update Header Information
+    document.getElementById('formStepTitle').innerText = stepTitles[currentStep].title;
+    document.getElementById('formStepSubtitle').innerText = stepTitles[currentStep].subtitle;
+    document.getElementById('stepBadge').innerText = `Step ${currentStep} of ${totalSteps}`;
+
+    // Toggle Buttons
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (currentStep === 1) {
+        prevBtn.classList.add('hidden');
+    } else {
+        prevBtn.classList.remove('hidden');
     }
 
-    // ==========================================
-    // Disable button
-    // ==========================================
+    if (currentStep === totalSteps) {
+        nextBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+    } else {
+        nextBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+    }
 
+    // Scroll slightly to the form top smoothly
+    document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
+}
+
+function handleFinalSubmit(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById('submitBtn');
+    const feedback = document.getElementById('formFeedback');
     submitBtn.innerText = 'Submitting...';
     submitBtn.disabled = true;
 
-    // ==========================================
-    // Get form
-    // ==========================================
-
-    const formElement =
-        document.getElementById('multiStepForm');
-
-    if (!formElement) {
-
-        console.error(
-            'multiStepForm not found.'
-        );
-
-        submitBtn.innerText = 'Submit Form ✓';
-        submitBtn.disabled = false;
-
-        return;
-    }
-
-    // ==========================================
-    // Convert FormData to JSON object
-    // ==========================================
-
-    const formData =
-        new FormData(formElement);
-
-    const dataObject =
-        Object.fromEntries(
-            formData.entries()
-        );
-
-    console.log(
-        'Sending data:',
-        dataObject
-    );
-
-    // ==========================================
-    // Send request to Vercel backend
-    // ==========================================
-
-    fetch('https://icfai-sih.vercel.app/api/register', {
-
-        method: 'POST',
-
-        headers: {
-            'Content-Type': 'application/json'
-        },
-
-        body: JSON.stringify(dataObject)
-
-    })
-
-    // ==========================================
-    // Convert response to JSON
-    // ==========================================
-
-    .then(async response => {
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                'Registration failed.'
-            );
-        }
-
-        return data;
-
-    })
-
-    // ==========================================
-    // Success
-    // ==========================================
-
-    .then(data => {
-
-        console.log(
-            'Server response:',
-            data
-        );
-
-        setTimeout(() => {
-
-            submitBtn.classList.add('hidden');
-
-            const prevBtn =
-                document.getElementById(
-                    'prevBtn'
-                );
-
-            if (prevBtn) {
-                prevBtn.classList.add('hidden');
-            }
-
-            if (data.success) {
-
-                feedback.innerHTML =
-                    '🎉 Congratulations! Team registered successfully!';
-
-                feedback.classList.remove(
-                    'hidden'
-                );
-
-                setTimeout(() => {
-
-                    const formContainer =
-                        document.querySelector(
-                            '.form-step'
-                        )?.closest('form') ||
-                        document.getElementById(
-                            'multiStepForm'
-                        );
-
-                    if (formContainer) {
-                        formContainer.style.display =
-                            'none';
-                    }
-
-                }, 3000);
-
-            } else {
-
-                feedback.innerText =
-                    '❌ ' +
-                    (data.message ||
-                        'Registration failed.');
-
-                feedback.classList.remove(
-                    'hidden'
-                );
-
-                submitBtn.innerText =
-                    'Submit Form ✓';
-
-                submitBtn.disabled = false;
-
-            }
-
-        }, 800);
-
-    })
-
-    // ==========================================
-    // Error
-    // ==========================================
-
-    .catch(error => {
-
-        console.error(
-            'Registration Error:',
-            error
-        );
-
-        setTimeout(() => {
-
-            submitBtn.innerText =
-                'Submit Form ✓';
-
-            submitBtn.disabled = false;
-
-            if (feedback) {
-
-                feedback.innerText =
-                    '❌ ' +
-                    error.message;
-
-                feedback.classList.remove(
-                    'hidden'
-                );
-
-            } else {
-
-                alert(
-                    'Server connection failed. Please try again.'
-                );
-
-            }
-
-        }, 800);
-
-    });
-
+    setTimeout(() => {
+        submitBtn.classList.add('hidden');
+        document.getElementById('prevBtn').classList.add('hidden');
+        feedback.classList.remove('hidden');
+    }, 800);
 }
+
+
+
+
+
